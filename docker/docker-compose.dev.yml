@@ -1,0 +1,60 @@
+# docker/docker-compose.dev.yml
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile.dev
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=wsgi.py
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/healthcare_donation
+      - JWT_SECRET_KEY=dev_secret_key_change_in_production
+    depends_on:
+      - db
+    volumes:
+      - ../backend:/app
+    command: flask run --host=0.0.0.0 --port=5000
+
+  ai_module:
+    build:
+      context: ..
+      dockerfile: docker/ai_module.Dockerfile.dev
+    ports:
+      - "5001:5001"
+    volumes:
+      - ../ai_module:/app
+    command: python -m flask run --host=0.0.0.0 --port=5001
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/frontend.Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000/api
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+    command: npm start
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=healthcare_donation
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
