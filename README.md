@@ -1,6 +1,3 @@
-
-
-````markdown
 # 🤖🩺 AI-Powered DAO for Healthcare Donations
 
 A decentralized, AI-enhanced healthcare donation platform that uses blockchain and machine learning to transparently allocate medical aid to the patients and hospitals that need it most.
@@ -213,9 +210,4 @@ This project is licensed under the **MIT License** – see the [LICENSE](LICENSE
 * TensorFlow, PyTorch & scikit-learn teams
 * Open Source Contributors
 * HealthTech DAO inspirations
-
----
-
-```
-```
 
