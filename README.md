@@ -193,7 +193,7 @@ This project is licensed under the **MIT License** – see the [LICENSE](LICENSE
 
 * **Project Lead:** Azeez
 * **AI Lead:** You
-* **Blockchain Lead:** TBD
+* **Blockchain Lead:** David Emmanuel
 * **Frontend/UX Designer:** TBD
 
 ---
