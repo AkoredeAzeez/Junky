@@ -1,0 +1,11 @@
+Your Order Reference: 985b1cf1-b9ea-4c68-9425-849283902e6c
+
+Token Name: Junky Donation (Prelaunch) 
+Token Symbol: JNK_BETA 
+PolicyId: a1471110c208c14702fa5f078596c2207752c5e9c8de50b9329c64c4 
+Transaction Mint:  https://preprod.cardanoscan.io/transaction/47d22862cb9614b2edc1eb7059e94b468b2214b498bbc33d4c15a04f29964fe5 
+Order Information: https://cardano-native-token.com/order-info/tokens/985b1cf1-b9ea-4c68-9425-849283902e6c 
+ 
+
+Do not hesitate to contact us at contact@cardano-native-token.com if you have any questions. 
+  
