@@ -88,3 +88,8 @@ class ApplicationService:
                 query = query.filter_by(status=status)
             
             # Sort by created_at in descending 
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Error retrieving applications: {str(e)}'
+            }
