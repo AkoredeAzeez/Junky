@@ -1,98 +1,274 @@
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <img src="https://cardano.org/img/social-logo.jpg" width="120" alt="Cardano Logo" />
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+<p align="center">
+  <b>Blockchain Microservice for Donation Pooling & Distribution</b>
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+
+<p align="center">
+  <a href="https://nestjs.com"><img src="https://img.shields.io/badge/built%20with-NestJS-ea2845.svg" alt="Built with NestJS"></a>
+  <a href="https://cardano.org"><img src="https://img.shields.io/badge/blockchain-Cardano-0033AD.svg" alt="Blockchain: Cardano"></a>
+  <a href="https://blockfrost.io/"><img src="https://img.shields.io/badge/API-Blockfrost-22B573.svg" alt="API: Blockfrost"></a>
+</p>
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This microservice manages the blockchain interaction layer for our donation pooling and distribution system built on Cardano. It's responsible for:
 
-## Project setup
+1. 🔐 Managing donation pooling via Cardano's UTxO model
+2. ⚖️ Handling on-chain logic through Aiken smart contracts
+3. 📡 Providing REST API endpoints for the main server to interact with the pool
+4. 🔄 Triggering distribution of funds based on voting and triage scores
 
-```bash
-$ npm install
+## Architecture Overview
+
+```mermaid
+flowchart LR
+  Frontend -->|POST /requests| MainServer
+  MainServer -->|POST /analyze| AIService
+  AIService -->|triage score| MainServer
+  MainServer -->|POST /pool/request| BlockchainService
+
+  Frontend -->|POST /donate| MainServer
+  MainServer -->|POST /pool/donate| BlockchainService
+
+  Scheduler -->|cron /distribute| BlockchainService
+  BlockchainService -->|on-chain tx| CardanoNode
+  CardanoNode -->|UTxO update| BlockchainService
 ```
 
-## Compile and run the project
+The BlockchainService (this microservice) works as the off-chain component handling:
+
+- Donation pooling validator (locking UTxOs)
+- Distribution trigger (consuming pool UTxO)
+- API endpoints for pool interactions
+
+## API Endpoints
+
+| Endpoint           | Method | Description                         |
+| ------------------ | ------ | ----------------------------------- |
+| `/pool/request`    | POST   | Register a new funding request      |
+| `/pool/donate`     | POST   | Record a donation and optional vote |
+| `/pool/distribute` | POST   | Trigger a distribution transaction  |
+
+See [API Documentation](#api-documentation) for detailed request/response formats.
+
+## Project Setup
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL/MongoDB database
+- Blockfrost API key for Cardano testnet/mainnet
 
 ```bash
-# development
+# Install dependencies
+$ npm install
+
+# Set up environment variables
+$ cp .env.example .env
+# Edit .env with your database and Blockfrost credentials
+```
+
+## Running the Service
+
+```bash
+# Development
 $ npm run start
 
-# watch mode
+# Watch mode (recommended during development)
 $ npm run start:dev
 
-# production mode
+# Production mode
 $ npm run start:prod
 ```
 
-## Run tests
+## Testing
 
 ```bash
-# unit tests
+# Unit tests
 $ npm run test
 
-# e2e tests
+# E2E tests (includes Cardano testnet interactions)
 $ npm run test:e2e
 
-# test coverage
+# Test coverage
 $ npm run test:cov
+```
+
+## API Documentation
+
+### POST /pool/request
+
+Register a new funding request in the pool service.
+
+**Request Body:**
+
+```json
+{
+  "request_id": "UUID",
+  "hospital_addr": "addr1...",
+  "triage_score": 0.85
+}
+```
+
+**Response:** `201 Created`
+
+### POST /pool/donate
+
+Record a donation and optionally a vote on a specific request.
+
+**Request Body:**
+
+```json
+{
+  "donation_id": "UUID",
+  "donor_addr": "addr1...",
+  "ada_amount": 100.0,
+  "request_id": "UUID"
+}
+```
+
+**Response:** `201 Created`
+
+### POST /pool/distribute
+
+Trigger a distribution transaction on-chain.
+
+**Request Body:**
+
+```json
+{
+  "pool_id": "UUID",
+  "interval": 10,
+  "percent": 0.2,
+  "top_n": 5
+}
+```
+
+**Response:**
+
+```json
+{
+  "tx_hash": "hash of the transaction",
+  "distributed_amount": 2000.0,
+  "recipients": [
+    {
+      "hospital_addr": "addr1...",
+      "amount": 500.0
+    },
+    ...
+  ]
+}
 ```
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Docker
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+We provide a Docker container for easy deployment:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Build the Docker image
+$ docker build -t blockchain-microservice .
+
+# Run the container
+$ docker run -p 3000:3000 --env-file .env blockchain-microservice
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Environment Variables
+
+Set these in your `.env` file before deployment:
+
+```
+# Database
+DB_TYPE=postgres  # or mongodb
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=password
+DB_NAME=donation_pool
+
+# Blockfrost
+BLOCKFROST_API_KEY=your_api_key
+BLOCKFROST_NETWORK=testnet  # or mainnet
+
+# Service
+PORT=3000
+NODE_ENV=production
+```
+
+## UTxO Flow with Blockfrost
+
+This service uses Blockfrost API to interact with the Cardano blockchain:
+
+### Donation Flow
+
+1. When a donation is received, the service:
+   - Retrieves the current pool UTxO at script address
+   - Builds a new transaction to update the pool
+   - Signs and submits the transaction
+
+```typescript
+// Simplified example of processing donation
+async function processDonation(donorAddr: string, amount: number) {
+  // Get current pool UTxO
+  const poolUtxo = await blockfrostApi.addressesUtxosAll(scriptAddress);
+
+  // Build transaction with updated datum
+  const tx = await buildDonationTx({
+    poolUtxo,
+    donorAddr,
+    amount,
+    newTotal: currentTotal + amount,
+  });
+
+  // Sign and submit
+  const signedTx = await signTransaction(tx, privateKey);
+  return await blockfrostApi.txSubmit(signedTx);
+}
+```
+
+### Distribution Flow
+
+1. The distribution endpoint:
+   - Computes top-N requests by weight
+   - Retrieves pool UTxO
+   - Creates transaction outputs to recipient hospitals
+   - Returns remainder to pool with updated datum
+
+## On-Chain Data Models
+
+This service interacts with the following on-chain data structures:
+
+```typescript
+// Datum for the donation pool UTxO
+interface PoolDatum {
+  poolId: string;
+  totalAda: number;
+  lastDistribution: number;
+  hyperparams: {
+    percent: number;
+    interval: number;
+    topN: number;
+  };
+}
+
+// Actions that can be performed on the pool
+enum PoolAction {
+  Donate,
+  Distribute,
+}
+```
 
 ## Resources
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- [Cardano Documentation](https://docs.cardano.org/)
+- [Blockfrost API Reference](https://docs.blockfrost.io/)
+- [Aiken Smart Contract Language](https://aiken-lang.org/)
+- [NestJS Documentation](https://docs.nestjs.com)
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is MIT licensed.

@@ -20,9 +20,12 @@ async function bootstrap() {
   )
 
   const config = new DocumentBuilder()
-    .setTitle('API')
-    .setDescription('API description')
+    .setTitle('Junky Blockchain Service API')
+    .setDescription(
+      'API for managing donation pooling and distribution on Cardano blockchain',
+    )
     .setVersion('1.0')
+    .addTag('pool', 'Donation pool operations')
     .build()
 
   const document = SwaggerModule.createDocument(app, config)
