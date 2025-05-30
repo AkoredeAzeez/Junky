@@ -67,6 +67,9 @@ def verify_build_artifacts(on_chain_dir):
             with open(timestamp_file, 'w') as f:
                 f.write(f"Last compiled: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
+            # Generate script addresses
+            generate_script_addresses(on_chain_dir, plutus_data)
+            
             return True
             
         except (json.JSONDecodeError, KeyError) as e:
@@ -75,6 +78,58 @@ def verify_build_artifacts(on_chain_dir):
     else:
         print("\nWarning: Build completed but build artifacts not found.")
         return False
+
+
+def generate_script_addresses(on_chain_dir, plutus_data):
+    """Generate script addresses from validator hashes."""
+    addresses_dir = on_chain_dir / "build" / "addresses"
+    addresses_dir.mkdir(exist_ok=True)
+    
+    print("\nGenerating script addresses...")
+    
+    if "validators" in plutus_data:
+        addresses_file = addresses_dir / "script_addresses.json"
+        addresses = {}
+        
+        validator_names = set()
+        for validator in plutus_data["validators"]:
+            title_parts = validator['title'].split('.')
+            if len(title_parts) >= 2:
+                validator_names.add(title_parts[-2])
+            else:
+                print(f"Warning: Unexpected title format for validator: {validator['title']}")
+        
+        for validator_name in validator_names:
+            try:
+                # Generate mainnet and testnet addresses using aiken CLI
+                result_mainnet = subprocess.run(
+                    ["aiken", "address", "--validator", validator_name, "--mainnet"],
+                    capture_output=True, text=True, check=True, shell=True
+                )
+                mainnet_address = result_mainnet.stdout.strip()
+                
+                result_testnet = subprocess.run(
+                    ["aiken", "address", "--validator", validator_name],
+                    capture_output=True, text=True, check=True, shell=True
+                )
+                testnet_address = result_testnet.stdout.strip()
+                
+                addresses[validator_name] = {
+                    "mainnet": mainnet_address,
+                    "testnet": testnet_address
+                }
+                
+                print(f" - Generated addresses for {validator_name}")
+                
+            except subprocess.CalledProcessError as e:
+                print(f"   Warning: Could not generate address for {validator_name}: {e}")
+                continue
+        
+        # Save addresses to file
+        with open(addresses_file, 'w') as f:
+            json.dump(addresses, f, indent=2)
+        
+        print(f"✓ Script addresses saved to {addresses_file}")
 
 
 def main():

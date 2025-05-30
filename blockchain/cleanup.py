@@ -27,6 +27,19 @@ def list_build_artifacts(on_chain_dir):
     return artifacts
 
 
+def list_script_addresses(on_chain_dir):
+    """List script address files."""
+    addresses_dir = on_chain_dir / "build" / "addresses"
+    addresses = []
+    
+    if addresses_dir.exists():
+        for item in addresses_dir.glob("*.json"):
+            if item.is_file():
+                addresses.append(item)
+    
+    return addresses
+
+
 def clean_build_artifacts(on_chain_dir):
     """Clean all build artifacts from the on-chain directory."""
     build_dir = on_chain_dir / "build"
@@ -89,6 +102,13 @@ def main():
             print(f" - {artifact.relative_to(on_chain_dir)}")
     else:
         print("\nNo build artifacts found.")
+    
+    # List script addresses before cleaning
+    addresses = list_script_addresses(on_chain_dir)
+    if addresses:
+        print(f"\nFound {len(addresses)} script address file(s):")
+        for address_file in addresses:
+            print(f" - {address_file.relative_to(on_chain_dir)}")
     
     # Clean build artifacts
     build_cleaned = clean_build_artifacts(on_chain_dir)
