@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/AuthPage.scss';
+import { signupPatient } from '../../services/auth';
 
 const PatientSignup = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const PatientSignup = () => {
     // Documents
     documents: []
   });
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,12 +89,19 @@ const PatientSignup = () => {
   };
 
   const handleCompleteRegistration = async () => {
+    setError('');
     try {
-      // TODO: Implement actual registration logic with API call
-      console.log('Patient registration:', formData);
+      await signupPatient({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        // Add other required fields as needed
+      });
       navigate('/dashboard');
     } catch (error) {
-      console.error('Registration error:', error);
+      setError('Registration failed. Please check your details.');
     }
   };
 
@@ -356,6 +365,7 @@ const PatientSignup = () => {
           </button>
         )}
       </div>
+      {error && <div className="error-message">{error}</div>}
     </div>
   );
 };

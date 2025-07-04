@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signupDonor } from '../../services/auth';
 
 const DonorSignup = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ const DonorSignup = () => {
     phoneNumber: '',
     address: ''
   });
+  const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -20,11 +22,21 @@ const DonorSignup = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement actual signup logic
-    console.log('Donor signup:', formData);
-    navigate('/dashboard');
+    setError('');
+    try {
+      await signupDonor({
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address
+      });
+      navigate('/dashboard');
+    } catch (error) {
+      setError('Registration failed. Please check your details.');
+    }
   };
 
   return (
@@ -100,6 +112,7 @@ const DonorSignup = () => {
           Create Account
         </button>
       </form>
+      {error && <div className="error-message">{error}</div>}
     </div>
   );
 };

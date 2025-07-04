@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signupHospital } from '../../services/auth';
 
 const HospitalSignup = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const HospitalSignup = () => {
     specialization: '',
     documents: []
   });
+  const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -31,11 +33,15 @@ const HospitalSignup = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement actual signup logic
-    console.log('Hospital signup:', formData);
-    navigate('/dashboard');
+    setError('');
+    try {
+      await signupHospital(formData);
+      navigate('/dashboard');
+    } catch (error) {
+      setError('Registration failed. Please check your details.');
+    }
   };
 
   return (
@@ -155,6 +161,7 @@ const HospitalSignup = () => {
           Create Account
         </button>
       </form>
+      {error && <div className="error-message">{error}</div>}
     </div>
   );
 };

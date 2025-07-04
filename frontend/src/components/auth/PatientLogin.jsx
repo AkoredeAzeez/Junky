@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/AuthPage.scss';
+import { loginUser } from '../../services/auth';
 
 const PatientLogin = () => {
   const navigate = useNavigate();
@@ -8,6 +9,7 @@ const PatientLogin = () => {
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -19,17 +21,19 @@ const PatientLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      // TODO: Implement actual login logic with API call
-      console.log('Patient login:', formData);
+      const data = await loginUser(formData.email, formData.password, 'patient');
+      // Store token if needed: localStorage.setItem('token', data.data.token);
       navigate('/dashboard');
     } catch (error) {
-      console.error('Login error:', error);
+      setError('Invalid email or password');
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="auth-form">
+      {error && <div className="error-message">{error}</div>}
       <div className="form-group">
         <label htmlFor="email">Email</label>
         <input
