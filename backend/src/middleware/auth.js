@@ -4,16 +4,37 @@ const Admin = require('../models/Admin');
 
 const auth = async (req, res, next) => {
   try {
+    console.log('Headers:', req.headers);
     const token = req.header('Authorization')?.replace('Bearer ', '');
+    console.log('Extracted token:', token ? 'Token exists' : 'No token');
     
     if (!token) {
+      console.log('No token found');
       throw new Error();
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await Admin.findOne({ _id: decoded.id, isActive: true });
+    console.log('Decoded token:', decoded);
+    
+    let user;
+    
+    // Handle different token formats
+    if (decoded.role) {
+      // Admin token format (has 'id' and 'role')
+      if (decoded.role === 'admin' || decoded.role === 'super_admin') {
+        user = await Admin.findOne({ _id: decoded.id, isActive: true });
+      } else {
+        user = await User.findOne({ _id: decoded.id, isActive: true });
+      }
+    } else if (decoded.userId) {
+      // User token format (has 'userId' but no 'role')
+      user = await User.findOne({ _id: decoded.userId, isActive: true });
+    }
+    
+    console.log('Found user:', user ? 'Yes' : 'No');
 
     if (!user) {
+      console.log('User not found in database');
       throw new Error();
     }
 
@@ -21,6 +42,7 @@ const auth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.log('Auth error:', error.message);
     res.status(401).json({ error: 'Please authenticate.' });
   }
 };
