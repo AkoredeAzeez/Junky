@@ -1,6 +1,9 @@
 const Admin = require('../models/Admin');
 const { createError } = require('../utils/error');
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const Application = require('../models/Application');
+const Donor = require('../models/Donor');
 
 // Create new admin
 exports.createAdmin = async (req, res, next) => {
@@ -162,49 +165,94 @@ exports.deleteAdmin = async (req, res, next) => {
 };
 
 exports.dashboard = async (req, res) => {
-  res.json({
-    message: 'Admin dashboard data',
-    user: {
-      id: req.user._id,
-      name: req.user.firstName + ' ' + req.user.lastName,
-      email: req.user.email,
-      role: req.user.role
-    },
-    stats: {
-      totalUsers: 0, // Replace with real count
-      totalApplications: 0 // Replace with real count
-    }
-  });
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalDonors = await User.countDocuments({ role: 'donor' });
+    const totalPatients = await User.countDocuments({ role: 'patient' });
+    const totalHospitals = await User.countDocuments({ role: 'hospital' });
+    const totalApplications = await Application.countDocuments();
+    res.json({
+      message: 'Admin dashboard data',
+      user: {
+        id: req.user._id,
+        name: req.user.name, // Use the correct name field for admin
+        email: req.user.email,
+        role: req.user.role
+      },
+      stats: {
+        totalUsers,
+        totalDonors,
+        totalPatients,
+        totalHospitals,
+        totalApplications
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+  }
 };
 exports.getAllUsers = async (req, res) => {
-  res.json({
-    users: [], // Replace with real data
-    user: {
-      name: req.user.firstName + ' ' + req.user.lastName
-    }
-  });
+  try {
+    const users = await User.find().select('-password');
+    res.json({ users });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
 };
-exports.updateUser = async (req, res) => {
-  res.json({
-    message: `User ${req.params.id} updated`,
-    user: {
-      name: req.user.firstName + ' ' + req.user.lastName
-    }
-  });
+
+exports.getAllDonors = async (req, res) => {
+  try {
+    // If donors are in User collection by role
+    const donors = await User.find({ role: 'donor' }).select('-password');
+    res.json({ donors });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch donors' });
+  }
 };
+
+exports.getAllPatients = async (req, res) => {
+  try {
+    const patients = await User.find({ role: 'patient' }).select('-password');
+    res.json({ patients });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch patients' });
+  }
+};
+
 exports.getAllApplications = async (req, res) => {
-  res.json({
-    applications: [], // Replace with real data
-    user: {
-      name: req.user.firstName + ' ' + req.user.lastName
-    }
-  });
+  try {
+    const applications = await Application.find().populate('patient', '-password');
+    res.json({ applications });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch applications' });
+  }
 };
+
 exports.updateApplication = async (req, res) => {
-  res.json({
-    message: `Application ${req.params.id} updated`,
-    user: {
-      name: req.user.firstName + ' ' + req.user.lastName
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // status: 'approved' or 'rejected'
+    const application = await Application.findById(id);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
     }
-  });
+    if (status && ['approved', 'rejected', 'pending'].includes(status)) {
+      application.status = status;
+      application.updatedAt = new Date();
+      await application.save();
+      return res.json({ message: `Application ${id} status updated to ${status}`, application });
+    }
+    res.status(400).json({ error: 'Invalid or missing status' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update application' });
+  }
+};
+
+exports.getAllHospitals = async (req, res) => {
+  try {
+    const hospitals = await User.find({ role: 'hospital' }).select('-password');
+    res.json({ hospitals });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch hospitals' });
+  }
 }; 
