@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: healthcare-donation-system
+Version: 0.1.0
+Requires-Dist: pytest
+Requires-Dist: pytest-asyncio
+Requires-Dist: pytest-cov
+Requires-Dist: requests
+Requires-Dist: aiohttp
+Dynamic: requires-dist
