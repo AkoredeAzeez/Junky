@@ -1,3 +1,18 @@
-.venv/ 
+# Python virtual environments
+.venv/
 env/
+
+# Environment variable files
 .env
+**/.env
+
+# Bytecode files
+__pycache__/
+*.py[cod]
+
+# Test cache
+.pytest_cache/
+
+# IDE settings
+.vscode/
+.idea/
